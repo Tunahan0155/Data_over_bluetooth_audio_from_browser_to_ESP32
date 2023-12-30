@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Send text over Bluetooth audio data</title>
+</head>
+
+<body>
+    <input id="text" type="text" onkeypress="getText(event)">
+    <button onclick="getText('Clicked')">Send data</button>
+    <script>
+        let text = document.getElementById("text");
+
+        function charToBinaryArray(char) {
+            const asciiCode = char.charCodeAt(0);
+            const binaryString = asciiCode.toString(2).padStart(8, '0');
+            const binaryArray = binaryString.split('').map(Number);
+            return binaryArray;
+        }
+
+        var frequencies = [5000, 7000, 9000, 11000, 13000, 15000, 17000, 19000];
+        const startTransmission = [0, 0, 0, 0, 1, 0, 1, 0];
+        const nextCharacter = [0, 0, 0, 1, 0, 1, 0, 0];
+        const stopTransmission = [0, 0, 0, 1, 1, 1, 1, 0];
+        var duration = 0.3; // Less duration reduces the transmission accuracy of data, more duration increases the transmission time of data.
+
+        async function getText(e) {
+            if ((e === "Clicked" || e.key === "Enter") && text.value !== "") {
+                const crc16 = calculateCRC16(text.value);
+                const character = text.value + crc16;
+                text.value = "";
+
+                await sendSound(startTransmission);
+                await delay(20); // The delay between each character separates the data, increasing transmission accuracy
+                for (let index = 0; index < character.length; index++) {
+                    const element = character[index];
+                    const binaryArray = charToBinaryArray(element);
+                    await sendSound(binaryArray);
+                    await delay(20); // The delay between each character separates the data, increasing transmission accuracy
+                    if (index < character.length - 1) {
+                        await sendSound(nextCharacter);
+                        await delay(20); // The delay between each character separates the data, increasing transmission accuracy
+                    }
+                }
+                await sendSound(stopTransmission);
+            }
+        }
+
+        async function sendSound(params) {
+            var audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 44100 });
+            var masterGain = audioContext.createGain();
+            masterGain.connect(audioContext.destination);
+
+            var oscillators = [];
+            for (var i = 0; i < frequencies.length; i++) {
+                if (params[i] == 1) { // Generates ascii code according to differences in frequency
+                    var oscillator = audioContext.createOscillator();
+                    oscillator.type = 'sine'; // Since the sine signal has the least harmonics, it gives more efficient results.
+                    oscillator.frequency.setValueAtTime(frequencies[i], audioContext.currentTime);
+                    oscillator.connect(masterGain);
+                    oscillators.push(oscillator);
+                }
+            }
+
+            var startTime = audioContext.currentTime;
+            var endTime = startTime + duration;
+
+            masterGain.gain.setValueAtTime(0.004, startTime); // lower volume helps reduce harmonics
+
+            for (var i = 0; i < oscillators.length; i++) {
+                oscillators[i].start(startTime);
+                oscillators[i].stop(endTime);
+            }
+
+            await delay(duration * 1000);
+            audioContext.close();
+        }
+
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // CRC calculation to make sure the data is going correctly
+        function calculateCRC16(buffer) {
+            let crc = 0xFFFF;
+            for (let i = 0; i < buffer.length; i++) {
+                crc = crc ^ buffer.charCodeAt(i);
+
+                for (let j = 0; j < 8; j++) {
+                    const odd = crc & 0x0001;
+                    crc = crc >> 1;
+
+                    if (odd) {
+                        crc = crc ^ 0xA001;
+                    }
+                }
+            }
+            return addLeadingZeros(crc.toString(16).toUpperCase()).toLowerCase();
+        }
+
+        // If the CRC number is less than 4 digits, add 0 to the left side (to easily separate the CRC from the data in ESP32)
+        function addLeadingZeros(input) {
+            if (input.length < 4) {
+                const zerosToAdd = 4 - input.length;
+                return "0".repeat(zerosToAdd) + input;
+            } else {
+                return input;
+            }
+        }
+    </script>
+</body>
+
+</html>
