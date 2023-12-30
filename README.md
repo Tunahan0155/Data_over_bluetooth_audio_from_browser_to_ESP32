@@ -7,7 +7,7 @@ It is very difficult to send data to Bluetooth devices via the browser. Although
 - The volume of the device should be at maximum
 - While sending data, no media should be played in the background, at least there should be no other sound source, otherwise the data to be sent will not be obtained correctly in ESP32 as the data to be sent will be distorted due to other sound sources.
 - For a reason I don't know, sometimes errors occur in esp32 when sending data from browsers on the phone.
-- ESP32-WROOM-32 was used in the project
+- ESP32-WROOM-32 was used in the project 
 
 ## License
 
