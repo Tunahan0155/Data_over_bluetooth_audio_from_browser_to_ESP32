@@ -13,8 +13,10 @@ It is very difficult to send data to Bluetooth devices via the browser. Although
 
 - Connect ESP32-VROOM-32 to pc
 - Open project on Arduino IDE
-- Include necessary library from 'https://github.com/pschatzmann/ESP32-A2DP'
-- Upload code and open serial monitor (baudrate is 2000000)
+- Include the following libraries on Arduino IDE 
+    - https://github.com/pschatzmann/ESP32-A2DP
+    - https://github.com/pschatzmann/arduino-audio-tools
+- Upload code to ESP32 and open serial monitor (baudrate is 2000000)
 - Go to bluetooth settings on your device and connect 'ESP32'
 - Make sure volume level at maximum in your device
 - Stop all other media source that create audio (music, video...)
