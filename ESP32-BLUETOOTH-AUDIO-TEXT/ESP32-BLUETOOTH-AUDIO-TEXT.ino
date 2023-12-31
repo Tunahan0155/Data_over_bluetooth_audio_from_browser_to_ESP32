@@ -170,9 +170,9 @@ void setup() {
 
   // Set up the A2DP sink and start it
   a2dp_sink.set_stream_reader(writeDataStream, false);
-  Serial.println("Starting a2dp-fft...");
+  Serial.println("Connect 'ESP32' on your device");
   a2dp_sink.set_auto_reconnect(false);
-  a2dp_sink.start("a2dp-fft");
+  a2dp_sink.start("ESP32");
   a2dp_sink.set_volume(255);
 }
 
