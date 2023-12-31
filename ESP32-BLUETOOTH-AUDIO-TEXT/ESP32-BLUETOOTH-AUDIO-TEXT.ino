@@ -13,25 +13,23 @@ String text = "";
 String ascii = "";
 uint16_t threshold = 1500;
 unsigned long timeoutStart;
-unsigned long timeoutDuration = 2000;
+unsigned long timeoutDuration = 2000; // timeout will be triggered If no data is received for more than 2 seconds
 
 // Function to write data to the FFT object
 void writeDataStream(const uint8_t *data, uint32_t length) {
   fft.write(data, length);
 }
 
-// Convert binary array to decimal and take appropriate actions
-void processBinaryData(uint8_t binaryArray[]) {
-  uint8_t decimal = binaryArrayToDecimal(binaryArray);
-
-  if (decimal == 10) {
+// take appropriate actions
+void processBinaryData(uint8_t command) {
+  if (command == 10) {
     processDataArrived();
-  } else if (decimal == 20) {
+  } else if (command == 20) {
     processNextCharacter();
-  } else if (decimal == 30) {
+  } else if (command == 30) {
     processDataComplete();
   } else {
-    processCharacter(decimal);
+    processCharacter(command);
   }
 }
 
@@ -39,12 +37,9 @@ void processBinaryData(uint8_t binaryArray[]) {
 void processDataArrived() {
   if (!dataArrived) {
     Serial.println("Data is processing...");
-    resetTimeout();
     dataArrived = true;
     nextCharacter = true;
-    text = "";
-    ascii = "";
-    fft.reset();
+    resetStates();
   }
 }
 
@@ -81,12 +76,9 @@ void processDataComplete() {
     } else {
       Serial.println("IS NOT CORRECT!!!");
     }
-    text = "";
-    ascii = "";
-    resetTimeout();
     dataArrived = false;
     nextCharacter = false;
-    fft.reset();
+    resetStates();
   }
 }
 
@@ -98,60 +90,60 @@ void fftResult(AudioFFTBase &fft) {
   if (result.magnitude > 100) {
     float* FFTArray = fft.magnitudes();
     uint16_t FFTsize = fft.size();
-    uint8_t resultArray[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    uint8_t frequencyResult = 0;
     // Extract binary data from specific frequency ranges
     for (int i = 450; i < 1775; i++) {
       if (i >= 460 && i <= 470) {
         if (FFTArray[i] > threshold) {
-          resultArray[0] = 1;
+          frequencyResult |= 0x01 << 7;
         } else if (i == 470) {
           i = 645;
         }
       } else if (i >= 645 && i <= 655) {
         if (FFTArray[i] > threshold) {
-          resultArray[1] = 1;
+          frequencyResult |= 0x01 << 6;
         } else if (i == 655) {
           i = 832;
         }
       } else if (i >= 832 && i <= 842) {
         if (FFTArray[i] > threshold) {
-          resultArray[2] = 1;
+          frequencyResult |= 0x01 << 5;
         } else if (i == 842) {
           i = 1018;
         }
       } else if (i >= 1018 && i <= 1028) {
         if (FFTArray[i] > threshold) {
-          resultArray[3] = 1;
+          frequencyResult |= 0x01 << 4;
         } else if (i == 1028) {
           i = 1203;
         }
       } else if (i >= 1203 && i <= 1213) {
         if (FFTArray[i] > threshold) {
-          resultArray[4] = 1;
+          frequencyResult |= 0x01 << 3;
         } else if (i == 1213) {
           i = 1389;
         }
       } else if (i >= 1389 && i <= 1399) {
         if (FFTArray[i] > threshold) {
-          resultArray[5] = 1;
+          frequencyResult |= 0x01 << 2;
         } else if (i == 1399) {
           i = 1575;
         }
       } else if (i >= 1575 && i <= 1585) {
         if (FFTArray[i] > threshold) {
-          resultArray[6] = 1;
+          frequencyResult |= 0x01 << 1;
         } else if (i == 1585) {
           i = 1761;
         }
       } else if (i >= 1761 && i <= 1771) {
         if (FFTArray[i] > threshold) {
-          resultArray[7] = 1;
+          frequencyResult |= 0x01 << 0;
         } else if (i == 1771) {
           i = 1775;
         }
       }
     }
-    processBinaryData(resultArray);
+    processBinaryData(frequencyResult);
   }
 }
 
@@ -179,13 +171,18 @@ void setup() {
 void loop() {
   if (isTimeout()) {
     Serial.println("The data has timed out!");
-    text = "";
-    ascii = "";
-    resetTimeout();
     dataArrived = false;
     nextCharacter = false;
-    fft.reset();
+    resetStates();
   }
+}
+
+// Reset variables in initial states
+void resetStates() {
+  text = "";
+  ascii = "";
+  resetTimeout();
+  fft.reset();
 }
 
 // Reset timeout schedule every time new data arrives
@@ -201,15 +198,6 @@ bool isTimeout() {
 // Convert decimal value to corresponding character
 char decimalToChar(uint8_t decimal) {
   return static_cast<char>(decimal);
-}
-
-// Convert binary array to decimal value
-uint8_t binaryArrayToDecimal(uint8_t binaryArray[]) {
-  uint8_t decimalValue = 0;
-  for (uint8_t i = 0; i < 8; i++) {
-    decimalValue += binaryArray[i] * pow(2, 7 - i);
-  }
-  return decimalValue;
 }
 
 // Find the most repeated character in a string (because same chracter is recived multiple times)
