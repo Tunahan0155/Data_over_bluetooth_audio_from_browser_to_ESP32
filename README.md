@@ -1,6 +1,6 @@
 ## Purpose of usage
 
-It is very difficult to send data to Bluetooth devices via the browser. Although technologies such as the WEB Blurtooth API have emerged recently, these are still not supported by most browsers. With this project, it sends audio signals at different frequencies from the browser to ESP32 via Bluetooth audio (A2DP profile), and in ESP32 this is the case. It analyzes the audio signals on the frequency axis and converts this incoming audio signal into ASCII code, so data can be sent to Esp32 from all browsers.
+It is very difficult to send data to Bluetooth devices via the browser. Although technologies such as the WEB Bluetooth API have emerged recently, these are still not supported by most browsers. With this project, it sends audio signals at different frequencies from the browser to ESP32 via Bluetooth audio (A2DP profile). It analyzes the audio signals on the frequency axis and converts this incoming audio signal into ASCII code in ESP32, so in this way data can be sent to ESP32 from all browsers.
 
 ## Things to pay attention
 
