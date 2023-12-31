@@ -11,7 +11,7 @@ It is very difficult to send data to Bluetooth devices via the browser. Although
 
 ## How to use
 
-- Connect ESP32-VROOM'32 to pc
+- Connect ESP32-VROOM-32 to pc
 - open project
 - include necessary library from 'https://github.com/pschatzmann/ESP32-A2DP' this link
 - Upload code and open Serial Monitor (baudrate is 2000000)
